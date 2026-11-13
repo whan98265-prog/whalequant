@@ -2288,8 +2288,10 @@ async function markAllRead() {
           }
         });
       } catch (err) {
-        host.innerHTML = '<div class="panel-head"><h2>' + (name || sym) + ' · 实时分析</h2>' +
-          '<span class="counter warn">取数失败：' + err.message + '</span></div>';
+        var msg = err.message;
+        if (sym.indexOf('us') === 0) msg = '美股日线源暂不可用（腾讯对美股只回 2 根日线）；A 股 / 港股分析正常。';
+        host.innerHTML = '<div class="panel-head"><h2>' + (name || sym.toUpperCase()) + ' · 实时分析</h2>' +
+          '<span class="counter warn">' + msg + '</span></div>';
       }
     });
   }
@@ -2302,6 +2304,7 @@ async function markAllRead() {
 })();
 </script>
 <!-- live-search:end -->
+
 
 
 
