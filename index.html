@@ -564,44 +564,6 @@ html, body {
 
   <div id="view-terminal" class="view active">
   <main class="grid">
-    <!-- strategy-panel:start -->
-
-<style>
-.strategy-panel{grid-column:1/-1}
-.strat-grid{display:grid;grid-template-columns:1.75fr 1fr;gap:22px;padding:2px}
-.strat-sub{font-size:12px;color:var(--muted);letter-spacing:.08em;margin:0 0 8px}
-.strat-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
-.strat-tbl th{text-align:left;color:var(--dim);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-.strat-tbl td{padding:7px 8px;border-bottom:1px solid var(--line-soft);color:var(--text);white-space:nowrap}
-.strat-tbl td.num{font-variant-numeric:tabular-nums;text-align:right}
-.strat-tbl tr:hover td{background:rgba(69,212,255,.04)}
-.strat-name{color:var(--text);font-weight:600}
-.strat-code{color:var(--dim);font-size:11.5px;margin-left:6px}
-.strat-tag{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
-.strat-tag.on{color:var(--accent);border-color:rgba(69,212,255,.45)}
-.strat-note{font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.75}
-.strat-up{color:#ff6b81}
-.strat-down{color:#3fd39a}
-</style>
-
-<section class='panel strategy-panel'>
-<div class='panel-head'><h2>今日策略 · 海龟 + 多因子</h2>
-<span class='counter'>基准日 2026-11-12 · 生成 2026-11-12</span></div>
-<div class='strat-grid'><div>
-<div class='strat-sub'>候选清单（按综合分排序，价格为实盘口径）</div>
-<table class='strat-tbl'><thead><tr><th>标的</th><th>现价</th><th>综合分</th><th>信号</th><th>买入区间</th><th>止损</th><th>目标区间</th></tr></thead><tbody>
-<tr><td><span class='strat-name'>贵州茅台</span><span class='strat-code'>600519</span></td><td class='num'>1,435.26</td><td class='num'>0.54</td><td><span class='strat-tag on'>海龟·回踩</span></td><td class='num'>1,402.92 ~ 1,448.49</td><td class='num'>1,350.02</td><td class='num'>1,426.94 ~ 1,479.84</td></tr><tr><td><span class='strat-name'>招商银行</span><span class='strat-code'>600036</span></td><td class='num'>42.93</td><td class='num'>0.52</td><td><span class='strat-tag on'>海龟·回踩</span></td><td class='num'>42.26 ~ 43.55</td><td class='num'>40.91</td><td class='num'>43.55 ~ 44.90</td></tr><tr><td><span class='strat-name'>长江电力</span><span class='strat-code'>600900</span></td><td class='num'>29.91</td><td class='num'>0.47</td><td><span class='strat-tag on'>海龟·-</span></td><td class='num'>29.49 ~ 30.37</td><td class='num'>28.64</td><td class='num'>30.40 ~ 31.25</td></tr><tr><td><span class='strat-name'>兴业银行</span><span class='strat-code'>601166</span></td><td class='num'>19.83</td><td class='num'>0.46</td><td><span class='strat-tag on'>海龟·-</span></td><td class='num'>19.42 ~ 19.96</td><td class='num'>18.91</td><td class='num'>19.67 ~ 20.18</td></tr><tr><td><span class='strat-name'>中国平安</span><span class='strat-code'>601318</span></td><td class='num'>53.80</td><td class='num'>0.40</td><td><span class='strat-tag on'>海龟·-</span></td><td class='num'>52.68 ~ 54.16</td><td class='num'>51.25</td><td class='num'>55.14 ~ 56.58</td></tr><tr><td><span class='strat-name'>宁德时代</span><span class='strat-code'>300750</span></td><td class='num'>237.70</td><td class='num'>0.40</td><td><span class='strat-tag'>海龟·-</span></td><td class='num'>227.09 ~ 243.64</td><td class='num'>205.87</td><td class='num'>313.89 ~ 335.11</td></tr><tr><td><span class='strat-name'>金山办公</span><span class='strat-code'>688111</span></td><td class='num'>217.21</td><td class='num'>0.37</td><td><span class='strat-tag'>海龟·-</span></td><td class='num'>206.98 ~ 231.48</td><td class='num'>186.53</td><td class='num'>249.25 ~ 269.70</td></tr><tr><td><span class='strat-name'>中芯国际</span><span class='strat-code'>688981</span></td><td class='num'>110.50</td><td class='num'>0.37</td><td><span class='strat-tag'>海龟·-</span></td><td class='num'>101.01 ~ 112.99</td><td class='num'>91.08</td><td class='num'>126.94 ~ 136.87</td></tr>
-</tbody></table>
-<div class='strat-note'>买入区间＝回踩 MA20 ±0.5N；止损＝区间下沿 − 2N；目标＝MA60 +2N / +4N。综合分＝GBDT 残差模型 0.55 + 海龟信号 0.30 + 新闻情绪 0.15（深度模型未收敛时不计权）。</div>
-</div><div>
-<div class='strat-sub'>模拟盘 · 本金 1 万（实盘价成交）</div>
-<table class='strat-tbl'><thead><tr><th>持仓</th><th>股数</th><th>成本</th><th>现价</th><th>盈亏</th><th>止损</th></tr></thead><tbody>
-<tr><td><span class='strat-name'>长江电力</span><span class='strat-code'>600900</span></td><td class='num'>100</td><td class='num'>29.91</td><td class='num'>29.91</td><td class='num strat-up'>+0.00%</td><td class='num'>29.06</td></tr><tr><td><span class='strat-name'>兴业银行</span><span class='strat-code'>601166</span></td><td class='num'>100</td><td class='num'>19.83</td><td class='num'>19.83</td><td class='num strat-up'>+0.00%</td><td class='num'>18.58</td></tr>
-<tr><td>现金</td><td class='num'>—</td><td class='num'>—</td><td class='num'>—</td><td class='num'>—</td><td class='num'>5,024.51</td></tr>
-</tbody></table>
-<div class='strat-note'>总资产 9,998.51 元；仓位上限 33%，单笔风险 1%，100 股整手。到目标区间下沿减半、上沿清仓，跌破峰值 − 2N 追踪止损。</div>
-</div></div></section>
-<!-- strategy-panel:end -->
     <!-- 自选 -->
     <aside class="panel watch">
       <div class="panel-head">
