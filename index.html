@@ -2129,8 +2129,20 @@ async function markAllRead() {
 <script>
 (function () {
   var box = document.getElementById('search');
-  var sug = document.getElementById('suggest');
   if (!box) return;
+  var sug = document.createElement('div');
+  sug.className = 'ls-sug';
+  sug.style.display = 'none';
+  document.body.appendChild(sug);
+
+  function placeSug() {
+    var r = box.getBoundingClientRect();
+    sug.style.left = (r.left + window.scrollX) + 'px';
+    sug.style.top = (r.bottom + window.scrollY + 6) + 'px';
+    sug.style.width = Math.max(240, r.width) + 'px';
+  }
+  function showSug() { placeSug(); sug.style.display = 'block'; }
+  function hideSug() { sug.style.display = 'none'; sug.innerHTML = ''; }
 
   function jsonp(url, varName, cb) {
     var s = document.createElement('script');
@@ -2153,10 +2165,10 @@ async function markAllRead() {
     e.stopImmediatePropagation();
     var q = box.value.trim();
     if (timer) clearTimeout(timer);
-    if (!q) { sug.innerHTML = ''; return; }
+    if (!q) { hideSug(); return; }
     timer = setTimeout(function () {
       jsonp('https://smartbox.gtimg.cn/s3/?v=2&q=' + encodeURIComponent(q) + '&t=all', 'v_hint', function (raw) {
-        if (!raw) { sug.innerHTML = '<div>搜索服务暂时不可用</div>'; return; }
+        if (!raw) { sug.innerHTML = '<div>搜索服务暂时不可用</div>'; showSug(); return; }
         var items = String(raw).split('^');
         var html = '';
         items.slice(0, 8).forEach(function (it) {
@@ -2168,9 +2180,10 @@ async function markAllRead() {
                   ' <span style="color:#7d90ab">' + f[1] + '</span></div>';
         });
         sug.innerHTML = html;
+        showSug();
         Array.prototype.forEach.call(sug.querySelectorAll('[data-sym]'), function (el) {
           el.onclick = function () {
-            sug.innerHTML = '';
+            hideSug();
             analyze(el.dataset.sym, el.dataset.name);
           };
         });
@@ -2301,9 +2314,16 @@ async function markAllRead() {
   if (bar) bar.textContent = bar.textContent.replace('搜索不可用', '搜索：代码/名称/拼音（如 600519、AAPL、0700）');
   var m = /(?:^|[#&?])q=([A-Za-z0-9.]+)/.exec(location.hash || '');
   if (m) setTimeout(function () { analyze(m[1], ''); }, 600);
+  var s = /(?:^|[#&?])s=([^&]+)/.exec(location.hash || '');
+  if (s) setTimeout(function () {
+    box.value = decodeURIComponent(s[1]);
+    box.dispatchEvent(new Event('input'));
+  }, 600);
 })();
 </script>
 <!-- live-search:end -->
+
+
 
 
 
