@@ -2116,6 +2116,14 @@ async function markAllRead() {
 </script>
 <!-- live-search:start -->
 <style>
+.ls-kwrap{margin-top:12px;position:relative}
+.ls-kbar{display:flex;gap:6px;align-items:center;margin-bottom:6px;font-size:12px;color:var(--dim)}
+.ls-kbar button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:2px 10px;cursor:pointer;font-size:12px}
+.ls-kbar button.on{border-color:var(--accent);color:var(--accent)}
+#ls-k{width:100%;height:300px;display:block;cursor:crosshair;border-radius:10px;background:#0b1420}
+#ls-tip{position:absolute;pointer-events:none;background:#0c1524;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:11.5px;color:var(--text);white-space:pre;display:none;z-index:30}
+</style>
+<style>
 #live-analysis{margin-top:14px}
 #live-analysis table{width:100%;border-collapse:collapse;font-size:12.5px}
 #live-analysis td{padding:6px 8px;border-bottom:1px solid var(--line-soft)}
@@ -2222,6 +2230,134 @@ async function markAllRead() {
   }
   function fmt(x) { return (x >= 100 ? x.toFixed(2) : x.toFixed(2)); }
 
+
+  var K = { mode: 'd', lock: -1 };
+  function agg(d, mode) {
+    if (mode === 'd') return d.map(function (x) { return { date: x.date, open: x.open, close: x.close, high: x.high, low: x.low }; });
+    var out = [], cur = null, key = '';
+    d.forEach(function (x) {
+      var dt = new Date(x.date + 'T00:00:00');
+      var k = mode === 'w' ? (function () {
+        var one = new Date(dt.getTime());
+        one.setDate(one.getDate() - ((one.getDay() + 6) % 7));
+        return one.toISOString().slice(0, 10);
+      })() : x.date.slice(0, 7);
+      if (k !== key) {
+        if (cur) out.push(cur);
+        cur = { date: x.date, open: x.open, close: x.close, high: x.high, low: x.low };
+        key = k;
+      } else {
+        cur.close = x.close; cur.high = Math.max(cur.high, x.high); cur.low = Math.min(cur.low, x.low); cur.date = x.date;
+      }
+    });
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  function drawK(host, all) {
+    var box = host.querySelector('#ls-chart-body');
+    if (!box || !all || all.length < 5) return;
+    var raw = agg(all, K.mode), bars = [], z;
+    for (z = 0; z < raw.length; z++) {
+      var o = Number(raw[z].open), c0 = Number(raw[z].close), h0 = Number(raw[z].high), l0 = Number(raw[z].low);
+      if (!isFinite(o) || !isFinite(c0) || !isFinite(h0) || !isFinite(l0)) continue;
+      bars.push({ date: raw[z].date, open: o, close: c0, high: h0, low: l0 });
+    }
+    if (bars.length > 120) bars = bars.slice(-120);
+    if (bars.length < 5) { box.innerHTML = '<div style="padding:20px;color:#7d90ab">数据不足</div>'; return; }
+
+    var W = 1160, H = 300, padL = 58, padR = 14, padT = 14, padB = 26;
+    var hi = -Infinity, lo = Infinity;
+    for (z = 0; z < bars.length; z++) {
+      hi = Math.max(hi, bars[z].high);
+      lo = Math.min(lo, bars[z].low);
+    }
+    if (!isFinite(hi) || !isFinite(lo) || hi <= lo) return;
+    var span = hi - lo;
+    var step = (W - padL - padR) / bars.length;
+    function X(i) { return padL + step * (i + 0.5); }
+    function Y(v) { return padT + (hi - v) / span * (H - padT - padB); }
+
+    box.setAttribute('data-info', 'all=' + all.length + ' bars=' + bars.length + ' mode=' + K.mode +
+      ' hi=' + hi.toFixed(2) + ' lo=' + lo.toFixed(2) + ' first=' + bars[0].date + ':' + bars[0].close +
+      ' last=' + bars[bars.length - 1].date + ':' + bars[bars.length - 1].close + ' w=' + W);
+    var svg = ['<svg id="ls-svg" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:300px;display:block;background:#0b1420;border-radius:10px" xmlns="http://www.w3.org/2000/svg">'];
+    for (var g = 0; g <= 4; g++) {
+      var gv = lo + span * g / 4, gy = Y(gv);
+      svg.push('<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="rgba(255,255,255,.07)"/>');
+      svg.push('<text x="6" y="' + (gy - 4).toFixed(1) + '" fill="#7d90ab" font-size="11">' + (gv >= 100 ? gv.toFixed(0) : gv.toFixed(2)) + '</text>');
+    }
+    var bw = Math.max(2, step * 0.58);
+    for (var i = 0; i < bars.length; i++) {
+      var b = bars[i], cx = X(i), up = b.close >= b.open, col = up ? '#ff4d5e' : '#22c55e';
+      svg.push('<line x1="' + cx.toFixed(1) + '" y1="' + Y(b.high).toFixed(1) + '" x2="' + cx.toFixed(1) + '" y2="' + Y(b.low).toFixed(1) + '" stroke="' + col + '" stroke-width="1"/>');
+      var top = Y(Math.max(b.open, b.close)), bot = Y(Math.min(b.open, b.close));
+      svg.push('<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1.2, bot - top).toFixed(1) + '" fill="' + col + '"/>');
+    }
+    var pts = [];
+    for (var m = 0; m < bars.length; m++) {
+      if (m < 19) continue;
+      var s = 0;
+      for (var q = m - 19; q <= m; q++) s += bars[q].close;
+      pts.push(X(m).toFixed(1) + ',' + Y(s / 20).toFixed(1));
+    }
+    if (pts.length > 1) svg.push('<polyline points="' + pts.join(' ') + '" fill="none" stroke="rgba(69,212,255,.9)" stroke-width="1.3"/>');
+    for (var j = 1; j < bars.length; j++) {
+      var prevHi = -Infinity, prevLo = Infinity;
+      for (var a = Math.max(0, j - 20); a < j; a++) prevHi = Math.max(prevHi, bars[a].high);
+      for (var c2 = Math.max(0, j - 10); c2 < j; c2++) prevLo = Math.min(prevLo, bars[c2].low);
+      var sig = '';
+      if (bars[j].close > prevHi) sig = 'B';
+      else if (bars[j].close < prevLo) sig = 'S';
+      if (!sig) continue;
+      var mx = X(j), my = sig === 'B' ? Y(bars[j].low) + 14 : Y(bars[j].high) - 14;
+      var d = sig === 'B'
+        ? (mx.toFixed(1) + ',' + (my - 11).toFixed(1) + ' ' + (mx - 5.5).toFixed(1) + ',' + my.toFixed(1) + ' ' + (mx + 5.5).toFixed(1) + ',' + my.toFixed(1))
+        : (mx.toFixed(1) + ',' + (my + 11).toFixed(1) + ' ' + (mx - 5.5).toFixed(1) + ',' + my.toFixed(1) + ' ' + (mx + 5.5).toFixed(1) + ',' + my.toFixed(1));
+      svg.push('<polygon points="' + d + '" fill="' + (sig === 'B' ? '#ff4d5e' : '#22c55e') + '"/>');
+      svg.push('<text x="' + (mx - 3).toFixed(1) + '" y="' + (my + (sig === 'B' ? 9 : 4)).toFixed(1) + '" fill="#0b1420" font-size="9" font-weight="bold">' + sig + '</text>');
+    }
+    svg.push('<line id="ls-vline" x1="0" y1="' + padT + '" x2="0" y2="' + (H - padB) + '" stroke="rgba(69,212,255,.75)" stroke-width="1" style="display:none"/>');
+    svg.push('</svg>');
+    box.innerHTML = svg.join('');
+
+    var svgEl = box.querySelector('#ls-svg');
+    var vline = box.querySelector('#ls-vline');
+    var tip = host.querySelector('#ls-tip');
+    function idxAt(clientX) {
+      var r = svgEl.getBoundingClientRect();
+      var vx = (clientX - r.left) * (W / r.width);
+      var idx = Math.floor((vx - padL) / step);
+      return (idx >= 0 && idx < bars.length) ? idx : -1;
+    }
+    function show(clientX, clientY) {
+      var idx = idxAt(clientX);
+      if (idx < 0) { tip.style.display = 'none'; return; }
+      var bb = bars[idx], chg = idx ? (bb.close / bars[idx - 1].close - 1) * 100 : 0;
+      tip.textContent = bb.date + '\n开 ' + bb.open.toFixed(2) + '  高 ' + bb.high.toFixed(2) +
+        '\n低 ' + bb.low.toFixed(2) + '  收 ' + bb.close.toFixed(2) +
+        '\n涨跌 ' + (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%' +
+        (K.lock === idx ? '\n已锁定（再点或 Esc 解锁）' : '\n点击锁定');
+      tip.style.display = 'block';
+      var r2 = svgEl.getBoundingClientRect();
+      tip.style.left = Math.min(r2.width - 170, clientX - r2.left + 14) + 'px';
+      tip.style.top = Math.max(0, clientY - r2.top - 8) + 'px';
+      vline.setAttribute('x1', X(idx)); vline.setAttribute('x2', X(idx));
+      vline.style.display = 'block';
+    }
+    svgEl.onmousemove = function (e) { if (K.lock < 0) show(e.clientX, e.clientY); };
+    svgEl.onmouseleave = function () { if (K.lock < 0) { tip.style.display = 'none'; vline.style.display = 'none'; } };
+    svgEl.onclick = function (e) {
+      var idx = idxAt(e.clientX);
+      K.lock = (idx >= 0 && K.lock !== idx) ? idx : -1;
+      if (K.lock < 0) { tip.style.display = 'none'; vline.style.display = 'none'; }
+      else show(e.clientX, e.clientY);
+    };
+    document.onkeydown = function (ev) {
+      if (ev.key === 'Escape') { K.lock = -1; tip.style.display = 'none'; vline.style.display = 'none'; }
+    };
+  }
+
   function normSym(s) {
     s = String(s || '').trim().toLowerCase();
     if (/^(sh|sz|hk|us)/.test(s)) return s;
@@ -2233,6 +2369,8 @@ async function markAllRead() {
 
   function analyze(sym, name) {
     sym = normSym(sym);
+    Array.prototype.forEach.call(document.querySelectorAll('#ls-chart'), function (el) { el.remove(); });
+    Array.prototype.forEach.call(document.querySelectorAll('#live-analysis'), function (el) { el.remove(); });
     var host = document.getElementById('live-analysis');
     if (!host) {
       host = document.createElement('section');
@@ -2293,6 +2431,25 @@ async function markAllRead() {
           '</table>' +
           '<div class="strat-note">区间算法与本地 quant/ 一致：买入＝回踩 MA20 ±0.5N，止损＝区间下沿 − 2N，目标＝MA60 + 2N / 4N。仅供参考，不构成投资建议。</div>' +
           '</div></div>';
+        var cw = document.getElementById('ls-chart');
+        if (!cw) { cw = document.createElement('section'); cw.className = 'panel strategy-panel'; cw.id = 'ls-chart'; var gMain = document.querySelector('main.grid');
+          if (gMain && gMain.parentNode) { gMain.parentNode.insertBefore(cw, gMain.nextSibling); }
+          else { host.parentNode.insertBefore(cw, host.nextSibling); } }
+        cw.innerHTML = '<div class="ls-kwrap"><div class="ls-kbar">' +
+          '<button data-k=\"d\" class=\"on\">日K</button>' +
+          '<button data-k=\"w\">周K</button>' +
+          '<button data-k=\"m\">月K</button>' +
+          '<span style="margin-left:8px">▲ 买点  ▼ 卖点（海龟突破 / 跌破10日低或MA20-6%）</span>' +
+          '</div><div id="ls-chart-body" style="position:relative;min-height:300px"></div><div id="ls-tip"></div>' +
+          '<div id="ls-cross" style="position:absolute;top:0;bottom:0;width:1px;background:rgba(69,212,255,.7);display:none;pointer-events:none"></div></div>';
+        cw.querySelectorAll('.ls-kbar [data-k]').forEach(function (b) {
+          b.onclick = function () {
+            cw.querySelectorAll('.ls-kbar [data-k]').forEach(function (x) { x.classList.remove('on'); });
+            b.classList.add('on'); K.mode = b.dataset.k; K.lock = -1; drawK(cw, d);
+          };
+        });
+        requestAnimationFrame(function(){ drawK(cw, d); });
+
         jsonp('https://qt.gtimg.cn/q=' + sym, 'v_' + sym, function (q) {
           var nm = q && String(q).split('~')[1];
           if (nm) {
@@ -2335,6 +2492,240 @@ async function markAllRead() {
 })();
 </script>
 <!-- live-search:end -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- live-k:start -->
+<style>
+#chart{position:relative}
+#lk-tip{position:absolute;pointer-events:none;background:#0c1524;border:1px solid #22304a;border-radius:8px;padding:6px 9px;font-size:11.5px;color:#dbe6f5;white-space:pre;display:none;z-index:30}
+.lk-btn{background:transparent;border:1px solid #22304a;color:#8ea3bd;border-radius:8px;padding:2px 9px;font-size:11.5px;cursor:pointer;margin-right:6px}
+.lk-btn.on{border-color:#45d4ff;color:#45d4ff}
+</style>
+<script>
+(function () {
+  var LK = { sym: null, lock: -1, win: 120 };
+
+  function jsonp(url, name, cb) {
+    var s = document.createElement('script'), done = false;
+    s.src = url;
+    s.onload = function () { done = true; s.remove(); cb(window[name]); };
+    s.onerror = function () { s.remove(); cb(null); };
+    document.head.appendChild(s);
+    setTimeout(function () { if (!done) { s.remove(); cb(null); } }, 8000);
+  }
+
+  function symOf(txt) {
+    var f = String(txt || '').trim().split(/\s+/);
+    if (f.length < 2) return null;
+    var mk = f[0].toUpperCase(), code = f[1];
+    if (mk === 'HK') return 'hk' + code;
+    if (mk === 'US') return 'us' + code;
+    return (mk === 'SH' ? 'sh' : 'sz') + code;
+  }
+
+  function currentSymbol() {
+    var el = document.querySelector('.strategy-panel .strat-code');
+    return LK.sym || (el ? symOf(el.textContent) : null) || 'sh600519';
+  }
+
+  function render(all) {
+    var el = document.getElementById('chart');
+    if (!el || !all || all.length < 40) return;
+    var bars = all.slice(-(LK.win || 120));
+    el.style.minHeight = '320px';
+    var card = el.closest('.panel') || el.parentElement;
+    if (card) { card.style.minHeight = '380px'; card.style.overflow = 'visible'; }
+    var W = Math.max(680, el.clientWidth || 900);
+    var H = Math.max(280, el.clientHeight || 380);
+    var padL = 10, padR = 64, padT = 14, padB = 22;
+    var plotW = W - padL - padR;
+    var min = Infinity, max = -Infinity;
+    bars.forEach(function (b) { if (b.low < min) min = b.low; if (b.high > max) max = b.high; });
+    var pad = (max - min) * 0.06 || max * 0.02;
+    min -= pad; max += pad;
+    var step = plotW / bars.length;
+    function X(i) { return padL + i * step + step / 2; }
+    function Y(v) { return padT + (max - v) / (max - min) * (H - padT - padB); }
+
+    var out = ['<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="width:100%;height:100%">'];
+    for (var g = 0; g <= 4; g++) {
+      var gv = min + (max - min) * g / 4, gy = Y(gv);
+      out.push('<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="rgba(112,176,255,0.07)"/>');
+      out.push('<text x="' + (W - padR + 8) + '" y="' + (gy + 3.5).toFixed(1) + '" fill="#56657d" font-size="9.5" font-family="monospace">' + gv.toFixed(2) + '</text>');
+    }
+    var bw = Math.max(1, Math.min(12, step * 0.62));
+    bars.forEach(function (b, i) {
+      var cx = X(i), up = b.close >= b.open, col = up ? '#ff4d5e' : '#22c55e';
+      out.push('<line x1="' + cx.toFixed(1) + '" y1="' + Y(b.high).toFixed(1) + '" x2="' + cx.toFixed(1) + '" y2="' + Y(b.low).toFixed(1) + '" stroke="' + col + '"/>');
+      var y1 = Y(Math.max(b.open, b.close)), y2 = Y(Math.min(b.open, b.close));
+      out.push('<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1.2, y2 - y1).toFixed(1) + '" fill="' + col + '"/>');
+    });
+    var pts = [];
+    for (var m = 19; m < bars.length; m++) {
+      var s = 0;
+      for (var q = m - 19; q <= m; q++) s += bars[q].close;
+      pts.push(X(m).toFixed(1) + ',' + Y(s / 20).toFixed(1));
+    }
+    if (pts.length > 1) out.push('<polyline points="' + pts.join(' ') + '" fill="none" stroke="rgba(69,212,255,0.85)" stroke-width="1.2"/>');
+    for (var j = 1; j < bars.length; j++) {
+      var ph = -Infinity, pl = Infinity;
+      for (var a = Math.max(0, j - 20); a < j; a++) ph = Math.max(ph, bars[a].high);
+      for (var c2 = Math.max(0, j - 10); c2 < j; c2++) pl = Math.min(pl, bars[c2].low);
+      var sig = bars[j].close > ph ? 'B' : (bars[j].close < pl ? 'S' : '');
+      if (!sig) continue;
+      var mx = X(j), my = sig === 'B' ? Y(bars[j].low) + 13 : Y(bars[j].high) - 13;
+      var poly = sig === 'B'
+        ? (mx.toFixed(1) + ',' + (my - 10).toFixed(1) + ' ' + (mx - 5).toFixed(1) + ',' + my.toFixed(1) + ' ' + (mx + 5).toFixed(1) + ',' + my.toFixed(1))
+        : (mx.toFixed(1) + ',' + (my + 10).toFixed(1) + ' ' + (mx - 5).toFixed(1) + ',' + my.toFixed(1) + ' ' + (mx + 5).toFixed(1) + ',' + my.toFixed(1));
+      out.push('<polygon points="' + poly + '" fill="' + (sig === 'B' ? '#ff4d5e' : '#22c55e') + '"/>');
+    }
+    out.push('<line id="lk-cross" x1="0" y1="' + padT + '" x2="0" y2="' + (H - padB) + '" stroke="rgba(69,212,255,0.8)" style="display:none"/>');
+    out.push('</svg>');
+    el.innerHTML = out.join('') + '<div id="lk-tip"></div>';
+    try {
+      var lastB = bars[bars.length - 1], prevB = bars[bars.length - 2] || lastB;
+      var nmEl = document.getElementById('stock-name');
+      var cdEl = document.getElementById('stock-code');
+      var prEl = document.getElementById('stock-price');
+      var chEl = document.getElementById('stock-chg');
+      if (cdEl) cdEl.textContent = LK.sym.slice(0, 2).toUpperCase() + '.' + LK.sym.slice(2);
+      if (prEl) prEl.textContent = lastB.close.toFixed(2);
+      if (chEl) {
+        var pctB = (lastB.close / prevB.close - 1) * 100;
+        chEl.textContent = (pctB >= 0 ? '+' : '') + pctB.toFixed(2) + '%';
+        chEl.className = 'chg ' + (pctB >= 0 ? 'up' : 'down');
+      }
+      if (nmEl) {
+        var nmMap = { hk00939: '建设银行', hk02020: '安踏体育', hk00941: '中国移动', hk00700: '腾讯控股',
+                      hk01810: '小米集团-W', hk01299: '友邦保险', sh600519: '贵州茅台', sz000001: '平安银行',
+                      sh601288: '农业银行', sh601398: '工商银行' };
+        if (nmMap[LK.sym]) nmEl.textContent = nmMap[LK.sym];
+      }
+    } catch (eHdr) {}
+
+    var svgEl = el.querySelector('svg'), tip = el.querySelector('#lk-tip'), cross = el.querySelector('#lk-cross');
+    function idxAt(clientX) {
+      var r = svgEl.getBoundingClientRect();
+      var vx = (clientX - r.left) * (W / r.width);
+      var i = Math.floor((vx - padL) / step);
+      return (i >= 0 && i < bars.length) ? i : -1;
+    }
+    function show(clientX, clientY) {
+      var i = idxAt(clientX);
+      if (i < 0) { tip.style.display = 'none'; return; }
+      var b = bars[i], chg = i ? (b.close / bars[i - 1].close - 1) * 100 : 0;
+      tip.textContent = b.date + '\n开 ' + b.open.toFixed(2) + '  高 ' + b.high.toFixed(2) +
+        '\n低 ' + b.low.toFixed(2) + '  收 ' + b.close.toFixed(2) +
+        '\n涨跌 ' + (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%' +
+        (LK.lock === i ? '\n已锁定（再点 / Esc 解锁）' : '\n点击锁定');
+      tip.style.display = 'block';
+      var r2 = svgEl.getBoundingClientRect();
+      tip.style.left = Math.min(r2.width - 170, clientX - r2.left + 14) + 'px';
+      tip.style.top = Math.max(0, clientY - r2.top - 6) + 'px';
+      cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.style.display = 'block';
+    }
+    svgEl.onmousemove = function (e) { if (LK.lock < 0) show(e.clientX, e.clientY); };
+    svgEl.onmouseleave = function () { if (LK.lock < 0) { tip.style.display = 'none'; cross.style.display = 'none'; } };
+    svgEl.onclick = function (e) {
+      var i = idxAt(e.clientX);
+      LK.lock = (i >= 0 && LK.lock !== i) ? i : -1;
+      if (LK.lock < 0) { tip.style.display = 'none'; cross.style.display = 'none'; }
+      else show(e.clientX, e.clientY);
+    };
+    document.onkeydown = function (ev) {
+      if (ev.key === 'Escape') { LK.lock = -1; tip.style.display = 'none'; cross.style.display = 'none'; }
+    };
+  }
+
+  function load(sym) {
+    LK.sym = sym || currentSymbol();
+    var vn = 'LK' + Date.now();
+    jsonp('https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?_var=' + vn + '&param=' + LK.sym + ',day,,,320,qfq', vn, function (data) {
+      try {
+        var node = data && data.data && data.data[LK.sym];
+        var rows = node && (node.qfqday || node.day);
+        if (!rows || rows.length < 40) throw new Error('no data');
+        var bars = rows.map(function (r) {
+          return { date: r[0], open: Number(r[1]), close: Number(r[2]), high: Number(r[3]), low: Number(r[4]), vol: Number(r[5]) };
+        });
+        window.__lkBars = bars;
+        render(bars);
+      } catch (err) {
+        var el = document.getElementById('chart');
+        if (el) el.innerHTML = '<div style="padding:24px;color:#8ea3bd">K线取数失败：' + LK.sym + '</div>';
+      }
+    });
+  }
+
+  function addButtons() {
+    var bar = document.querySelector('.chart-ranges');
+    if (!bar) {
+      var chart = document.getElementById('chart');
+      var sib = chart && chart.previousElementSibling;
+      bar = (sib && sib.querySelector && sib.querySelector('button')) ? sib : null;
+    }
+    if (!bar || bar.querySelector('.lk-btn')) return;
+    [['日K', 15], ['3月', 60], ['6月', 120], ['1年', 250], ['2年', 500]].forEach(function (it) {
+      var b = document.createElement('button');
+      b.className = 'lk-btn' + (it[1] === LK.win ? ' on' : '');
+      b.textContent = it[0];
+      b.onclick = function () {
+        LK.win = it[1]; LK.lock = -1;
+        Array.prototype.forEach.call(bar.querySelectorAll('.lk-btn'), function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        load(LK.sym);
+      };
+      bar.appendChild(b);
+    });
+  }
+
+  window.addEventListener('load', function () {
+    setTimeout(function () { addButtons(); load(currentSymbol()); }, 1600);
+  });
+
+  // the page's own snapshot renderer also paints #chart: re-assert ours after it runs
+  function wrapRenderer() {
+    if (!window.renderChart || window.renderChart.__lkWrapped) return;
+    var orig = window.renderChart;
+    window.renderChart = function () {
+      var r = orig.apply(this, arguments);
+      if (window.__lkBars) setTimeout(function () { render(window.__lkBars); }, 30);
+      return r;
+    };
+    window.renderChart.__lkWrapped = true;
+  }
+  setTimeout(wrapRenderer, 800);
+  setInterval(function () {
+    var el = document.getElementById('chart');
+    if (!el || !window.__lkBars) return;
+    if (!el.querySelector('#lk-tip')) render(window.__lkBars);
+  }, 1500);
+  window.__lkLoad = load;
+})();
+</script>
+<!-- live-k:end -->
 
 
 
