@@ -616,6 +616,81 @@ html, body {
 
   <div id="view-terminal" class="view active">
   <main class="grid">
+    <!-- pool-panel:start -->
+
+<style>
+.pool-panel{grid-column:1/-1}
+.pool-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:2px}
+@media(max-width:980px){.pool-cols{grid-template-columns:1fr}}
+.pool-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.pool-tbl th{text-align:left;color:var(--dim);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.pool-tbl td{padding:7px 8px;border-bottom:1px solid var(--line-soft);color:var(--text);white-space:nowrap}
+.pool-tbl td.num{font-variant-numeric:tabular-nums;text-align:right}
+.pool-tbl tr:hover td{background:rgba(69,212,255,.04)}
+.pool-name{color:var(--text);font-weight:600}
+.pool-code{color:var(--dim);font-size:11.5px;margin-left:6px}
+.pool-tag{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pool-tag.A{color:#3fd39a;border-color:rgba(63,211,154,.5)}
+.pool-tag.B{color:#ffb347;border-color:rgba(255,179,71,.5)}
+.pool-tag.C{color:#ff6b81;border-color:rgba(255,107,129,.5)}
+.pool-up{color:#ff6b81}
+.pool-down{color:#3fd39a}
+.pool-note{font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.75}
+</style>
+
+<section class='panel pool-panel'>
+<div class='panel-head'><h2>选股池 · 子弹适配（A/B/C）</h2>
+<span class='counter'>基准日 2026-11-20 · 每 5 秒实时刷新</span></div>
+<div class='pool-cols'>
+<div><div class='strat-sub'>港股池（可交易）</div>
+<table class='pool-tbl'><thead><tr><th>标的</th><th>现价</th><th>涨跌</th><th>评级</th><th>波动</th><th>距20日上轨</th><th>止损</th><th>信号</th><th>说明</th></tr></thead><tbody>
+<tr><td><span class='pool-name'>恒生科技ETF</span><span class='pool-code'>HK.03032</span></td><td class='num pool-px' data-sym='hk03032' data-base='3.65'>3.65</td><td class='num pool-chg' data-sym='hk03032'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>2.94%</td><td class='num'>14.07%</td><td class='num'>3.44</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>华夏恒生科技</span><span class='pool-code'>HK.03033</span></td><td class='num pool-px' data-sym='hk03033' data-base='3.57'>3.57</td><td class='num pool-chg' data-sym='hk03033'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>2.93%</td><td class='num'>14.53%</td><td class='num'>3.36</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>2x做多恒科</span><span class='pool-code'>HK.07226</span></td><td class='num pool-px' data-sym='hk07226' data-base='1.97'>1.97</td><td class='num pool-chg' data-sym='hk07226'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>6.36%</td><td class='num'>31.43%</td><td class='num'>1.72</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>盈富基金(恒指)</span><span class='pool-code'>HK.02800</span></td><td class='num pool-px' data-sym='hk02800' data-base='22.94'>22.94</td><td class='num pool-chg' data-sym='hk02800'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>1.64%</td><td class='num'>9.07%</td><td class='num'>22.19</td><td>远</td><td class='pool-note'>每手约 11470 港币超预算</td></tr><tr><td><span class='pool-name'>恒生中国企业</span><span class='pool-code'>HK.02828</span></td><td class='num pool-px' data-sym='hk02828' data-base='78.94'>78.94</td><td class='num pool-chg' data-sym='hk02828'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>1.67%</td><td class='num'>9.22%</td><td class='num'>76.30</td><td>远</td><td class='pool-note'>每手约 15788 港币超预算</td></tr><tr><td><span class='pool-name'>腾讯控股</span><span class='pool-code'>HK.00700</span></td><td class='num pool-px' data-sym='hk00700' data-base='348.40'>348.40</td><td class='num pool-chg' data-sym='hk00700'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>3.64%</td><td class='num'>23.77%</td><td class='num'>323.06</td><td>远</td><td class='pool-note'>每手约 34840 港币超预算</td></tr><tr><td><span class='pool-name'>阿里巴巴</span><span class='pool-code'>HK.09988</span></td><td class='num pool-px' data-sym='hk09988' data-base='80.55'>80.55</td><td class='num pool-chg' data-sym='hk09988'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>4.79%</td><td class='num'>35.82%</td><td class='num'>72.84</td><td>远</td><td class='pool-note'>每手约 8055 港币超预算</td></tr>
+</tbody></table></div>
+<div><div class='strat-sub'>美股池（信号参考）</div>
+<table class='pool-tbl'><thead><tr><th>标的</th><th>现价</th><th>涨跌</th><th>评级</th><th>波动</th><th>距20日上轨</th><th>止损</th><th>信号</th><th>说明</th></tr></thead><tbody>
+<tr><td><span class='pool-name'>苹果</span><span class='pool-code'>US.AAPL</span></td><td class='num pool-px' data-sym='usAAPL' data-base='349.21'>349.21</td><td class='num pool-chg' data-sym='usAAPL'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>2.44%</td><td class='num'>3.33%</td><td class='num'>332.19</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>亚马逊</span><span class='pool-code'>US.AMZN</span></td><td class='num pool-px' data-sym='usAMZN' data-base='257.37'>257.37</td><td class='num pool-chg' data-sym='usAMZN'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>3.91%</td><td class='num'>6.98%</td><td class='num'>237.22</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>特斯拉</span><span class='pool-code'>US.TSLA</span></td><td class='num pool-px' data-sym='usTSLA' data-base='374.41'>374.41</td><td class='num pool-chg' data-sym='usTSLA'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>4.65%</td><td class='num'>10.64%</td><td class='num'>339.57</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>谷歌</span><span class='pool-code'>US.GOOGL</span></td><td class='num pool-px' data-sym='usGOOGL' data-base='272.66'>272.66</td><td class='num pool-chg' data-sym='usGOOGL'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>4.08%</td><td class='num'>21.55%</td><td class='num'>250.38</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>NVIDIA</span><span class='pool-code'>US.NVDA</span></td><td class='num pool-px' data-sym='usNVDA' data-base='145.98'>145.98</td><td class='num pool-chg' data-sym='usNVDA'>--</td><td><span class='pool-tag A'>A</span></td><td class='num'>6.93%</td><td class='num'>50.7%</td><td class='num'>125.75</td><td>远</td><td class='pool-note'>规格合格</td></tr><tr><td><span class='pool-name'>标普500ETF</span><span class='pool-code'>US.SPY</span></td><td class='num pool-px' data-sym='usSPY' data-base='715.87'>715.87</td><td class='num pool-chg' data-sym='usSPY'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>1.77%</td><td class='num'>8.35%</td><td class='num'>690.52</td><td>远</td><td class='pool-note'>每手约 5584 港币超预算</td></tr><tr><td><span class='pool-name'>微软</span><span class='pool-code'>US.MSFT</span></td><td class='num pool-px' data-sym='usMSFT' data-base='498.30'>498.30</td><td class='num pool-chg' data-sym='usMSFT'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>3.38%</td><td class='num'>12.0%</td><td class='num'>464.59</td><td>远</td><td class='pool-note'>每手约 3887 港币超预算</td></tr><tr><td><span class='pool-name'>纳指100ETF</span><span class='pool-code'>US.QQQ</span></td><td class='num pool-px' data-sym='usQQQ' data-base='645.04'>645.04</td><td class='num pool-chg' data-sym='usQQQ'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>2.77%</td><td class='num'>12.57%</td><td class='num'>609.29</td><td>远</td><td class='pool-note'>每手约 5031 港币超预算</td></tr><tr><td><span class='pool-name'>Meta</span><span class='pool-code'>US.META</span></td><td class='num pool-px' data-sym='usMETA' data-base='596.22'>596.22</td><td class='num pool-chg' data-sym='usMETA'>--</td><td><span class='pool-tag C'>C</span></td><td class='num'>3.43%</td><td class='num'>14.23%</td><td class='num'>555.30</td><td>远</td><td class='pool-note'>每手约 4651 港币超预算</td></tr>
+</tbody></table></div>
+</div>
+<div class='pool-note'>A＝波动 1.5-8%、每手≤3500 港币、20 日均额≥0.5 亿，可直接配海龟；B＝波动略偏或流动性一般，需调参数；C＝买不起/流动性不足/波动极端，只能观察。</div>
+
+<script>
+(function(){
+  var els = [].slice.call(document.querySelectorAll('.pool-px, .pool-chg'));
+  var syms = {};
+  els.forEach(function(el){ if(el.dataset.sym) syms[el.dataset.sym]=1; });
+  var keys = Object.keys(syms);
+  if(!keys.length) return;
+  function paint(){
+    keys.forEach(function(k){
+      var q = window['v_'+k];
+      if(!q) return;
+      var f = q.split('~');
+      var px = parseFloat(f[3]);
+      var pct = parseFloat(f[32] || '0');
+      if(!isFinite(px) || px<=0) return;
+      document.querySelectorAll('.pool-px[data-sym="'+k+'"]').forEach(function(el){
+        el.textContent = px.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+      });
+      document.querySelectorAll('.pool-chg[data-sym="'+k+'"]').forEach(function(el){
+        el.textContent = (pct>=0?'+':'') + pct.toFixed(2) + '%';
+        el.className = 'num pool-chg ' + (pct>=0?'pool-up':'pool-down');
+      });
+    });
+  }
+  function tick(){
+    var s = document.createElement('script');
+    s.src = 'https://qt.gtimg.cn/q=' + keys.join(',') + '&_=' + Date.now();
+    s.onload = function(){ paint(); s.remove(); };
+    s.onerror = function(){ s.remove(); };
+    document.body.appendChild(s);
+  }
+  tick();
+  setInterval(tick, 5000);
+})();
+</script>
+
+</section>
+<!-- pool-panel:end -->
     <!-- strategy-panel:start -->
 
 <style>
